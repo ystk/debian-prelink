@@ -1,0 +1,9 @@
+Makefile.in
+prelink.h
+#ts
+md5sha
+init
+fsync
+#prelink.8
+#cache
+timestamp
