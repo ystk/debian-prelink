@@ -1,4 +1,3 @@
-Makefile.in
 prelink.h
 #ts
 md5sha
@@ -7,3 +6,7 @@ fsync
 #prelink.8
 #cache
 timestamp
+r187
+r188
+r189
+r190

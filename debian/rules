@@ -16,6 +16,8 @@ configure: configure-stamp
 configure-stamp:
 	dh_testdir
 
+	cp /usr/share/misc/config.sub /usr/share/misc/config.guess .
+	autoreconf -i --force
 	mkdir -p $(objdir)
 	cd $(objdir) && ../configure \
 		--prefix=/ --mandir=/usr/share/man/ --disable-shared \
@@ -40,7 +42,8 @@ build-stamp: configure-stamp
 clean:  unpatch
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp configure-stamp
+	rm -f build-stamp configure-stamp config.sub config.guess
+	rm -f Makefile.in ltmain.sh libtool
 
 	rm -rf $(objdir)
 

@@ -1,0 +1,32 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## r190.dpatch by Andrey Rahmatullin <wrar@wrar.name>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Add some new DWARF definitions from the upstream r190.
+
+@DPATCH@
+
+Index: prelink/src/dwarf2.c
+===================================================================
+--- prelink/src/dwarf2.c	(revision 189)
++++ prelink/src/dwarf2.c	(revision 190)
+@@ -369,6 +369,7 @@
+ 	case DW_OP_const4u:
+ 	case DW_OP_const4s:
+ 	case DW_OP_call4:
++	case DW_OP_GNU_parameter_ref:
+ 	  ptr += 4;
+ 	  break;
+ 	case DW_OP_call_ref:
+Index: prelink/src/dwarf2.h
+===================================================================
+--- prelink/src/dwarf2.h	(revision 189)
++++ prelink/src/dwarf2.h	(revision 190)
+@@ -418,6 +418,7 @@
+ #define DW_OP_GNU_deref_type		0xf6
+ #define DW_OP_GNU_convert		0xf7
+ #define DW_OP_GNU_reinterpret		0xf9
++#define DW_OP_GNU_parameter_ref		0xfa
+ #define DW_OP_lo_user			0xe0
+ #define DW_OP_hi_user			0xff
+ 

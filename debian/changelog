@@ -1,3 +1,46 @@
+prelink (0.0.20090925-6) unstable; urgency=low
+
+  * QA upload.
+  * Use system libtool
+  * Remove debian/patches/Makefile.in.dpatch, which is now automatically
+    generated.
+  * Switch back to libelfg0 (since it is up to date on all architectures).
+
+ -- Michael Gilbert <mgilbert@debian.org>  Mon, 11 Jun 2012 14:34:26 -0400
+
+prelink (0.0.20090925-5) unstable; urgency=low
+
+  * QA upload.
+  * Use libelf instead of libelfg0.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Mon, 11 Jun 2012 10:22:26 -0400
+
+prelink (0.0.20090925-4) unstable; urgency=low
+
+  * QA upload.
+  * Use system config.sub and config.guess.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sat, 09 Jun 2012 12:53:24 -0400
+
+prelink (0.0.20090925-3) unstable; urgency=low
+
+  * QA upload.
+  * Remove explicit libc6-dev dependencies and set selinux dependency as
+    linux-only; making it possible to build on non-linux architectures.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sat, 09 Jun 2012 03:40:29 -0400
+
+prelink (0.0.20090925-2) unstable; urgency=low
+
+  * QA upload
+  * debian/control: Set Maintainer: to the QA group, drop Uploaders:
+  * debian/patches/: Add r187.dpatch, r188.dpatch, r189.dpatch and
+    r190.dpatch, cherry-picked from the upstream SVN
+    (svn://sourceware.org/svn/prelink), which define and handle several new
+    DWARF codes emitted by gcc > 4.5 (Closes: #676390)
+
+ -- Andrey Rahmatullin <wrar@wrar.name>  Thu, 07 Jun 2012 16:14:47 +0600
+
 prelink (0.0.20090925-1) unstable; urgency=low
 
   * New upstream release.
