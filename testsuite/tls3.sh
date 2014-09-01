@@ -10,7 +10,12 @@ case "`uname -m`" in
   ia64|ppc*|x86_64|alpha*|s390*|mips*|arm*) SHFLAGS=-fpic;; # Does not support non-pic shared libs
 esac
 # Disable this test under SELinux if textrel
-test -z "$SHFLAGS" -a -x /usr/sbin/getenforce -a "`/usr/sbin/getenforce`" = Enforcing && exit 77
+if test -z "$SHFLAGS" -a -x /usr/sbin/getenforce; then
+  case "`/usr/sbin/getenforce 2>/dev/null`" in
+    Permissive|Disabled) ;;
+    *) exit 77 ;;
+  esac
+fi
 rm -f tls3 tls3lib*.so tls3.log
 rm -f prelink.cache
 $CC -shared -O2 -fpic -o tls3lib1.so $srcdir/tls1lib1.c
@@ -18,7 +23,7 @@ $CC -shared -O2 $SHFLAGS -o tls3lib2.so $srcdir/tls3lib2.c \
   tls3lib1.so 2>/dev/null
 BINS="tls3"
 LIBS="tls3lib1.so tls3lib2.so"
-$CCLINK -o tls3 $srcdir/tls1.c -Wl,--rpath-link,. tls3lib2.so
+$CCLINK -o tls3 $srcdir/tls1.c -Wl,--rpath-link,. tls3lib2.so -lc tls3lib1.so
 savelibs
 echo $PRELINK ${PRELINK_OPTS--vm} ./tls3 > tls3.log
 $PRELINK ${PRELINK_OPTS--vm} ./tls3 >> tls3.log 2>&1 || exit 1
