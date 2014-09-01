@@ -1,23 +1,26 @@
 Summary: An ELF prelinking utility
 Name: prelink
-Version: 0.4.0
-Release: 7%{?dist}
+Version: 0.5.0
+Release: 1%{?dist}
+%global svnver 205
 License: GPLv2+
 Group: System Environment/Base
-%define date 20090311
-Source: ftp://people.redhat.com/jakub/prelink/prelink-%{date}.tar.bz2
+%define date 20130503
+# svn export svn://sourceware.org/svn/prelink/trunk@%{svnver} prelink
+# tar cf - prelink | bzip2 -9 > prelink-%{date}.tar.bz2
+Source: http://people.redhat.com/jakub/prelink/prelink-%{date}.tar.bz2
 Source2: prelink.conf
 Source3: prelink.cron
 Source4: prelink.sysconfig
-Buildroot: %{_tmppath}/prelink-root
-#BuildRequires: libelf-devel >= 0.7.0-5
+Patch0: prelink-armhf-dynamic-linker.patch
+
 BuildRequires: elfutils-libelf-devel-static
-BuildRequires: libselinux-static
+BuildRequires: libselinux-static, libselinux-utils
 BuildRequires: glibc-static
 Requires: glibc >= 2.2.4-18, coreutils, findutils
 Requires: util-linux, gawk, grep
 # For now
-ExclusiveArch: %{ix86} alpha sparc sparcv9 sparc64 s390 s390x x86_64 ppc ppc64
+ExclusiveArch: %{ix86} alpha sparc sparcv9 sparc64 s390 s390x x86_64 ppc ppc64 %{arm}
 
 %description
 The prelink package contains a utility which modifies ELF shared libraries
@@ -27,7 +30,14 @@ and thus programs come up faster.
 %prep
 %setup -q -n prelink
 
+# We have two possible dynamic linkers on ARM (soft/hard float ABI). For now,
+# specifically patch the name of the linker on hard float systems. FIXME.
+%ifarch armv7hl
+%patch0 -p1 -b .armhfp-dynamic-linker
+%endif
+
 %build
+sed -i -e '/^prelink_LDADD/s/$/ -lpthread/' src/Makefile.{am,in}
 %configure --disable-shared
 make %{_smp_mflags}
 echo ====================TESTING=========================
@@ -52,18 +62,23 @@ cat > %{buildroot}%{_sysconfdir}/rpm/macros.prelink <<"EOF"
 %%__prelink_undo_cmd     /usr/sbin/prelink prelink -y library
 EOF
 chmod 644 %{buildroot}%{_sysconfdir}/rpm/macros.prelink
+mkdir -p %{buildroot}%{_mandir}/man5
+echo '.so man8/prelink.8' > %{buildroot}%{_mandir}/man5/prelink.conf.5
+chmod 644 %{buildroot}%{_mandir}/man5/prelink.conf.5
 
-mkdir -p %{buildroot}/var/{lib/misc,log/prelink}
-touch %{buildroot}/var/lib/misc/prelink.full
-touch %{buildroot}/var/lib/misc/prelink.quick
-touch %{buildroot}/var/lib/misc/prelink.force
+mkdir -p %{buildroot}/var/{lib,log}/prelink
+touch %{buildroot}/var/lib/prelink/full
+touch %{buildroot}/var/lib/prelink/quick
+touch %{buildroot}/var/lib/prelink/force
 touch %{buildroot}/var/log/prelink/prelink.log
 
-%post
-touch /var/lib/misc/prelink.force
+#prelink wreaks havoc on sparc systems lets make sure its disabled by default there
+%ifarch %{sparc}
+sed -i -e 's|PRELINKING=yes|PRELINKING=no|g' %{buildroot}%{_sysconfdir}/sysconfig/prelink
+%endif
 
-%clean
-rm -rf %{buildroot}
+%post
+touch /var/lib/prelink/force
 
 %files
 %defattr(-,root,root)
@@ -75,15 +90,136 @@ rm -rf %{buildroot}
 %{_sysconfdir}/cron.daily/prelink
 %{_prefix}/sbin/prelink
 %{_prefix}/bin/execstack
+%{_mandir}/man5/prelink.conf.5*
 %{_mandir}/man8/prelink.8*
 %{_mandir}/man8/execstack.8*
-%attr(0644,root,root) %verify(not md5 size mtime) %ghost %config(missingok,noreplace) /var/lib/misc/prelink.full
-%attr(0644,root,root) %verify(not md5 size mtime) %ghost %config(missingok,noreplace) /var/lib/misc/prelink.quick
-%attr(0644,root,root) %verify(not md5 size mtime) %ghost %config(missingok,noreplace) /var/lib/misc/prelink.force
+%dir /var/lib/prelink
+%attr(0644,root,root) %verify(not md5 size mtime) %ghost %config(missingok,noreplace) /var/lib/prelink/full
+%attr(0644,root,root) %verify(not md5 size mtime) %ghost %config(missingok,noreplace) /var/lib/prelink/quick
+%attr(0644,root,root) %verify(not md5 size mtime) %ghost %config(missingok,noreplace) /var/lib/prelink/force
 %dir /var/log/prelink
 %attr(0644,root,root) %verify(not md5 size mtime) %ghost %config(missingok,noreplace) /var/log/prelink/prelink.log
 
 %changelog
+* Fri May  3 2013 Jakub Jelinek <jakub@redhat.com> 0.5.0-1
+- fix saving of cache if some dependencies are unprelinkable and their
+  dependencies bad (#788238)
+
+* Thu Apr 25 2013 Jakub Jelinek <jakub@redhat.com> 0.4.9-1
+- add support for STT_GNU_IFUNC and R_390_IRELATIVE on s390/s390x
+
+* Thu Apr 18 2013 Jakub Jelinek <jakub@redhat.com> 0.4.8-1
+- fix also the reloc{4,5,8,9}.sh testcases (#927818)
+
+* Thu Apr 18 2013 Jakub Jelinek <jakub@redhat.com> 0.4.7-1
+- adjust testsuite not to need --add-needed, and work even with latest ld (#927818)
+
+* Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.6-9
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
+* Thu Nov 29 2012 Jon Masters <jcm@jonmasters.org> - 0.4.6-8
+- Specifically switch the dynamic linker on ARM hard float (longterm fix req.)
+
+* Sat Jul 21 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.6-7
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Thu Jun 28 2012 Jakub Jelinek <jakub@redhat.com> 0.4.6-6
+- fix up DWARF4 DW_AT_data_member_location handling
+- add .debug_macro support
+- add DWZ multifile support
+
+* Wed Apr  4 2012 Peter Robinson <pbrobinson@fedoraproject.org> - 0.4.6-5
+- Add patch to fix FTBFS on ARM
+
+* Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.6-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
+* Wed Oct 12 2011 Jakub Jelinek <jakub@redhat.com> 0.4.6-3
+- add --layout-page-size=N option, default to --layout-page-size=32768
+  on AMD Bulldozer (#739460)
+- handle 0%%{?rhel} >= 7 like 0%%{?fedora} >= 13
+
+* Fri Aug 26 2011 Jakub Jelinek <jakub@redhat.com> 0.4.6-2
+- fix cxx3.sh for ppc
+
+* Fri Aug 26 2011 Jakub Jelinek <jakub@redhat.com> 0.4.6-1
+- enable for arm (#733089)
+  - adjust arm default dynamic linker
+  - fix up fast PIE detection to handle PT_LOPROC ... PT_HIPROC phdrs
+    before PT_PHDR
+  - disable cxx{1,2}.sh test checking for conflict removal on arm
+    due to EABI weirdnesses, add new cxx3.sh test that tests conflict
+    removal even on arm
+
+* Wed Jun 22 2011 Jakub Jelinek <jakub@redhat.com> 0.4.5-3
+- handle DW_OP_GNU_parameter_ref
+
+* Tue May 31 2011 Jakub Jelinek <jakub@redhat.com> 0.4.5-2
+- handle DW_OP_GNU_{{const,regval,deref}_type,convert,reinterpret}
+
+* Fri Apr  1 2011 Jakub Jelinek <jakub@redhat.com> 0.4.5-1
+- handle DW_OP_GNU_entry_value and DW_AT_GNU_call_site*
+
+* Wed Feb 09 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.4-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
+* Tue Nov 23 2010 Jakub Jelinek <jakub@redhat.com> 0.4.4-1
+- support copying over extended attributes (#456105)
+- handle DW_OP_GNU_implicit_pointer, fix handling of DW_OP_call_ref
+
+* Wed Jul 14 2010 Jakub Jelinek <jakub@redhat.com> 0.4.3-4
+- for prelink -u -o ... if no .gnu.prelink_undo section is
+  present just pass through the original bits to the output file
+  instead of saving the ELF file using libelf into a temporary
+  and then copying over or renaming that to the final output file
+  (#614382)
+
+* Fri Apr 23 2010 Jakub Jelinek <jakub@redhat.com> 0.4.3-3
+- move /var/lib/misc/prelink.{force,quick,full} to
+  /var/lib/prelink/{force,quick,full} (#584319)
+
+* Tue Apr 13 2010 Jakub Jelinek <jakub@redhat.com> 0.4.3-2
+- run restorecon on /var/lib/misc/prelink.force (#581959)
+
+* Tue Apr 13 2010 Jakub Jelinek <jakub@redhat.com> 0.4.3-1
+- add support for prelink -u -o - library
+- add DWARF4 support
+- fix up reloc{8,9}.sh for sparc64, reenable testing on sparc64
+
+* Mon Apr 12 2010 Jakub Jelinek <jakub@redhat.com> 0.4.2-7
+- BuildReq libselinux-utils (#571724)
+- handle R_390_{PC32DBL,16,PC16,PC16DBL,8} relocations in 31-bit objects
+  (#552635)
+- add prelink.conf(5) man page as a link to prelink(8) (#528933)
+
+* Mon Mar 08 2010 Dennis Gilmore <dennis@ausil.us> 0.4.2-6
+- disable tests on sparc64 bz#571551
+- disable prelink from running on sparc arches
+
+* Wed Dec 16 2009 Jakub Jelinek <jakub@redhat.com> 0.4.2-5
+- change textrel tests, so that even if getenforce exists, but
+  fails, textrel tests aren't run
+
+* Wed Nov  4 2009 Jakub Jelinek <jakub@redhat.com> 0.4.2-4
+- add support for STT_GNU_IFUNC on ppc/ppc64, R_PPC_IRELATIVE and
+  R_PPC64_{IRELATIVE,JMP_IREL}
+
+* Fri Sep 25 2009 Jakub Jelinek <jakub@redhat.com> 0.4.2-3
+- fix DW_OP_implicit_value handling
+
+* Sun Jul 26 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> 0.4.2-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
+
+* Thu Jul  9 2009 Jakub Jelinek <jakub@redhat.com> 0.4.2-1
+- don't look for *_IRELATIVE relocations in .gnu.conflict section in binaries
+
+* Sun Jul  5 2009 Jakub Jelinek <jakub@redhat.com> 0.4.1-1
+- add support for STT_GNU_IFUNC on i?86/x86_64 and R_{386,X86_64}_IRELATIVE
+- add support for DWARF3/DWARF4 features generated newly by recent
+  gccs
+- temporarily link prelink against -lpthread to workaround -lselinux
+  issue
+
 * Wed Mar 11 2009 Jakub Jelinek <jakub@redhat.com> 0.4.0-7
 - fix prelinking on ppc64
 
@@ -102,12 +238,12 @@ rm -rf %{buildroot}
 - BuildRequire libselinux-static rather than libselinux-devel (#440749)
 
 * Tue Oct  9 2007 Jakub Jelinek <jakub@redhat.com> 0.4.0-1
-- add support for -c /etc/prelink.conf.d/*.conf in prelink.conf (#244452)  
+- add support for -c /etc/prelink.conf.d/*.conf in prelink.conf (#244452)
 - remove no longer existent directories from default prelink.conf (#248694)
 - reenabled prelink C++ optimizations which have not triggered any longer
   since _ZT[IV]* moved into .data.rel.ro section from .data
 - fixed performance issues in C++ optimizations, especially on GCJ
-  CNI programs (#314051) 
+  CNI programs (#314051)
 - other performance improvements, prelink -avmR after prelink -ua now
   takes roughly 3m4s real time instead of 20m27s before
 - don't run TEXTREL tests if SELinux is enforcing (#245928)

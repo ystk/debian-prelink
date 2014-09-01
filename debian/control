@@ -1,13 +1,13 @@
 Source: prelink
 Section: admin
 Priority: optional
-Maintainer: Debian QA Group <packages@qa.debian.org>
-Build-Depends: debhelper (>> 4.0.18), libelfg0-dev, libpopt-dev, dpatch (>= 1.11), libselinux1-dev [linux-any], autotools-dev, autoconf, automake, libtool,
-Standards-Version: 3.8.1.0
+Maintainer: Geoffrey Thomas <gthomas@mokafive.com>
+Build-Depends: debhelper (>= 6.0.7~), libelfg0-dev, libpopt-dev, libselinux1-dev [linux-any], dh-autoreconf
+Standards-Version: 3.9.5.0
 
 Package: prelink
 Architecture: any 
-Depends: ${shlibs:Depends}, execstack
+Depends: ${shlibs:Depends}, ${misc:Depends}, execstack
 Description: ELF prelinking utility to speed up dynamic linking
  The prelink package contains a utility which modifies ELF shared libraries
  and executables, so that far fewer relocations need to be resolved at
@@ -15,7 +15,7 @@ Description: ELF prelinking utility to speed up dynamic linking
 
 Package: execstack
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: prelink (<< 0.0.20090311-2)
 Replaces: prelink
 Description: ELF GNU_STACK program header editing utility

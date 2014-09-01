@@ -1,31 +1,11 @@
-#! /bin/sh -e
-##
-## All lines beginning with `## DP:' are a description of the patch.
-## DP: Adds method to re-execute /sbin/init upon change made by prelink.
-## DP: Bug#281409
+Description: Add method to re-execute /sbin/init upon change made by prelink
+Bug-Debian: http://bugs.debian.org/281409
 
-[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
-patch_opts="${patch_opts:--f --no-backup-if-mismatch}"
-
-if [ $# -ne 1 ]; then
-    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
-    exit 1
-fi
-case "$1" in
-       -patch) patch $patch_opts -p1 < $0;;
-       -unpatch) patch $patch_opts -p1 -R < $0;;
-        *)
-                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
-                exit 1;;
-esac
-
-exit 0
-@DPATCH@
-
-diff -urN prelink-0.0.20041012.orig/src/main.c prelink-0.0.20041012/src/main.c
---- prelink-0.0.20041012.orig/src/main.c	2004-09-30 16:07:57.000000000 +0000
-+++ prelink-0.0.20041012/src/main.c	2004-11-16 00:39:28.000000000 +0000
-@@ -58,6 +58,8 @@
+Index: prelink-0.0.20130503/src/main.c
+===================================================================
+--- prelink-0.0.20130503.orig/src/main.c	2011-10-12 08:36:10.000000000 -0700
++++ prelink-0.0.20130503/src/main.c	2013-12-28 20:24:48.000000000 -0800
+@@ -59,6 +59,8 @@
  const char *prelink_conf = PRELINK_CONF;
  const char *prelink_cache = PRELINK_CACHE;
  const char *undo_output;
@@ -34,7 +14,7 @@ diff -urN prelink-0.0.20041012.orig/src/main.c prelink-0.0.20041012/src/main.c
  
  const char *argp_program_version = "prelink 1.0";
  
-@@ -111,6 +113,7 @@
+@@ -114,6 +116,7 @@
    {"mmap-region-end",	OPT_MMAP_REG_END, "BASE_ADDRESS", OPTION_HIDDEN, "" },
    {"seed",		OPT_SEED, "SEED", OPTION_HIDDEN, "" },
    {"compute-checksum",	OPT_COMPUTE_CHECKSUM, 0, OPTION_HIDDEN, "" },
@@ -42,9 +22,9 @@ diff -urN prelink-0.0.20041012.orig/src/main.c prelink-0.0.20041012/src/main.c
    { 0 }
  };
  
-@@ -222,12 +225,29 @@
-     case OPT_COMPUTE_CHECKSUM:
-       compute_checksum = 1;
+@@ -230,12 +233,29 @@
+       if (endarg != strchr (arg, '\0') || (layout_page_size & (layout_page_size - 1)))
+ 	error (EXIT_FAILURE, 0, "--layout-page-size option requires numberic power-of-two argument");
        break;
 +    case 'i':
 +      noreexecinit=1;
@@ -71,8 +51,8 @@ diff -urN prelink-0.0.20041012.orig/src/main.c prelink-0.0.20041012/src/main.c
 +
  static struct argp argp = { options, parse_opt, "[FILES]", argp_doc };
  
- int
-@@ -247,6 +267,11 @@
+ #if (defined (__i386__) || defined (__x86_64__)) && defined (__GNUC__)
+@@ -295,6 +315,11 @@
  
    argp_parse (&argp, argc, argv, 0, &remaining, 0);
  

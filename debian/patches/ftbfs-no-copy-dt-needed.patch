@@ -1,0 +1,21 @@
+Description:Fixes a FTBFS with The --no-copy-dt-needed linker flag which
+ requires that all needed libraries are explicitly added to the linker
+ command line.
+Author: Andreas Moog <amoog@ubuntu.com>
+Bug-Debian: http://bugs.debian.org/713628
+Forwarded: Per mail to Jakub Jelinek, jakub AT redhat DOT com
+Last-Update: 2013-08-10
+
+Index: prelink/src/Makefile.am
+===================================================================
+--- prelink.orig/src/Makefile.am	2013-08-10 23:28:39.000000000 +0200
++++ prelink/src/Makefile.am	2013-08-10 23:38:53.094809543 +0200
+@@ -21,7 +21,7 @@
+ 		  verify.c canonicalize.c md5.c md5.h sha.c sha.h 	     \
+ 		  $(common_SOURCES) $(arch_SOURCES)
+ prelink_LDADD = @LIBGELF@
+-prelink_LDFLAGS = -all-static
++prelink_LDFLAGS = -all-static -pthread
+ 
+ execstack_SOURCES = execstack.c $(common_SOURCES) $(arch_SOURCES)
+ 

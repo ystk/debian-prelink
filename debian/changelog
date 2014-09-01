@@ -1,3 +1,55 @@
+prelink (0.0.20130503-1) unstable; urgency=medium
+
+  * Against my better judgement, adopt the package (Closes: #657967).
+  * New upstream release, version 0.5.0 according to Fedora's numbering
+    (Closes: #736947).
+  * Bump standards version to 3.9.5.0 (no changes needed).
+  * In debian/patches:
+    - prelink.h.patch: Dropped; not needed except for truly ancient libc
+      versions (2003ish).
+    - init.patch, timestamp.patch: Refreshed.
+    - r187.patch, r188.patch, r189.patch, r190.patch: Dropped; part of
+      new upstream release.
+    - open-with-mode.patch: Dropped; fixed in upstream r176
+      "m4/libelf.m4: Resync with version of code in aclocal.m4."
+    - ts.patch, prelink.8.patch, cache.patch: Dropped; they were
+      previously commented out in debian/patches. ts skipped some tests
+      and the other two were fixed upstream.
+    - dso.c.patch, layout.c.patch, ts2.patch: Deleted; they were
+      unreferenced in debian/patches and look like old debugging stuff.
+  * debian/prelink.spec: Sync with Fedora -- this is used in generating
+    the upstream changelog.
+  * debian/copyright: Convert to machine-readable format 1.0 (aka DEP-5).
+  * Add a debian/watch file.
+
+ -- Geoffrey Thomas <gthomas@mokafive.com>  Mon, 17 Feb 2014 23:33:57 -0800
+
+prelink (0.0.20090925-8) unstable; urgency=low
+
+  * QA upload.
+  * Add debian/patches/ftbfs-no-copy-dt-needed.patch: (Closes: #713628)
+    - Fixes a FTBFS with The --no-copy-dt-needed linker flag which requires
+      that all needed libraries are explicitly added to the linker command
+      line.
+
+ -- Andreas Moog <amoog@ubuntu.com>  Sat, 10 Aug 2013 23:22:16 +0200
+
+prelink (0.0.20090925-7) unstable; urgency=low
+
+  * QA upload.
+  * m4/libelf.m4: Fixed open() call to include mode, as some gcc
+    configurations disallow using O_CREAT without it.  On Ubuntu, this
+    caused an FTBFS on all architectures in prelink's check for proper
+    libelf support (thanks, Ben Collins).
+  * Convert to dh-autoreconf, dropping manual autotools update patches.
+  * Convert to 3.0 (quilt) source format.
+  * Add ${misc:Depends}.
+  * Add build-arch and build-indep targets to debian/rules.
+  * Override statically-linked-binary Lintian error; prelink.bin must remain
+    statically linked so that e.g. it doesn't try to operate on itself.
+
+ -- Colin Watson <cjwatson@debian.org>  Wed, 08 May 2013 09:49:27 +0100
+
 prelink (0.0.20090925-6) unstable; urgency=low
 
   * QA upload.
